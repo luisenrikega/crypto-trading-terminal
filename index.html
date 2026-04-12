@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoSignal AI - Terminal de Trading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar de Navegación -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="glow-orb"></div>
+                <span>CS-AI</span>
+            </div>
+            <div class="nav-items">
+                <button class="nav-btn active" data-tab="explorer">
+                    <span class="icon">🧭</span>
+                    <span class="label">Explorador</span>
+                </button>
+                <button class="nav-btn" data-tab="signals">
+                    <span class="icon">📡</span>
+                    <span class="label">Señales</span>
+                </button>
+                <button class="nav-btn" data-tab="terminal-ai">
+                    <span class="icon">🤖</span>
+                    <span class="label">Terminal IA</span>
+                </button>
+                <button class="nav-btn" data-tab="liquidations">
+                    <span class="icon">🌊</span>
+                    <span class="label">Liquidaciones</span>
+                </button>
+                <button class="nav-btn" data-tab="whales">
+                    <span class="icon">🐋</span>
+                    <span class="label">Radar Ballenas</span>
+                </button>
+                <button class="nav-btn" data-tab="trends">
+                    <span class="icon">📊</span>
+                    <span class="label">Tendencias</span>
+                </button>
+            </div>
+            <div class="nav-footer">
+                <div class="connection-status">
+                    <div class="dot green"></div>
+                    <span>Binance Live</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="content">
+            <!-- Pestaña 1: Explorador de Mercado -->
+            <section id="explorer" class="tab-content active">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Explorador de Mercado</h1>
+                        <p>Top 25 Criptomonedas (Excl. Stables)</p>
+                    </div>
+                </header>
+
+                <div class="market-selector-sticky">
+                    <div class="data-status-bar">
+                        <span class="refresh-indicator"><i class="fas fa-sync-alt"></i> Siguiente escaneo en: <strong id="next-scan-timer">--:--</strong></span>
+                        <span class="last-update-label text-muted">Último: <span id="last-update-time">--:--</span></span>
+                    </div>
+                    <select id="crypto-select" class="premium-select">
+                        <option value="BTCUSDT">Bitcoin (BTC)</option>
+                        <option value="ETHUSDT">Ethereum (ETH)</option>
+                        <option value="HYPEUSDT">Hyperliquid (HYPE) 🆕</option>
+                        <option value="BNBUSDT">Binance Coin (BNB)</option>
+                        <option value="SOLUSDT">Solana (SOL)</option>
+                        <option value="XRPUSDT">Ripple (XRP)</option>
+                        <option value="DOGEUSDT">Dogecoin (DOGE)</option>
+                        <option value="ADAUSDT">Cardano (ADA)</option>
+                        <option value="AVAXUSDT">Avalanche (AVAX)</option>
+                        <option value="DOTUSDT">Polkadot (DOT)</option>
+                        <option value="LINKUSDT">Chainlink (LINK)</option>
+                        <option value="TRXUSDT">TRON (TRX)</option>
+                        <option value="MATICUSDT">Polygon (MATIC)</option>
+                        <option value="SHIBUSDT">Shiba Inu (SHIB)</option>
+                        <option value="NEARUSDT">Near Protocol (NEAR)</option>
+                        <option value="LTCUSDT">Litecoin (LTC)</option>
+                        <option value="BCHUSDT">Bitcoin Cash (BCH)</option>
+                        <option value="UNIUSDT">Uniswap (UNI)</option>
+                        <option value="ATOMUSDT">Cosmos (ATOM)</option>
+                        <option value="ETCUSDT">Ethereum Classic (ETC)</option>
+                        <option value="FILUSDT">Filecoin (FIL)</option>
+                        <option value="LDOUSDT">Lido DAO (LDO)</option>
+                        <option value="ICPUSDT">Internet Computer (ICP)</option>
+                        <option value="HBARUSDT">Hedera (HBAR)</option>
+                        <option value="APTUSDT">Aptos (APT)</option>
+                        <option value="INJUSDT">Injective (INJ)</option>
+                    </select>
+                </div>
+
+                <div class="chart-wrapper glass-card" style="height: 500px; min-height: 500px;">
+                    <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
+                </div>
+            </section>
+
+            <!-- Pestaña 2: Señales y Noticias -->
+            <section id="signals" class="tab-content">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Feed de Inteligencia</h1>
+                        <p>Señales de Telegram y Noticias de Mercado</p>
+                    </div>
+                </header>
+                <div class="signals-grid">
+                    <div class="glass-card full-height">
+                        <h3>Feed de Telegram</h3>
+                        <div id="telegram-feed" class="feed-container">
+                            <div class="feed-placeholder">Esperando enlaces de Telegram...</div>
+                        </div>
+                    </div>
+                    <div class="glass-card full-height">
+                        <h3>Noticias de Última Hora</h3>
+                        <div id="news-feed" class="feed-container">
+                            <div class="feed-placeholder">Esperando fuentes de noticias...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pestaña 3: Terminal de Decisión IA -->
+            <section id="terminal-ai" class="tab-content">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Terminal Cerebro IA</h1>
+                        <p>Análisis de Confluencia Global y Sentimiento Macro</p>
+                    </div>
+                </header>
+
+                <div class="terminal-grid">
+                    <div class="ai-status-card glass-card">
+                        <div class="indicator-label">RECOMENDACIÓN FINAL</div>
+                        <div id="final-recommendation" class="signal-value neutral">ANALIZANDO...</div>
+                        <div class="confidence-bar">
+                            <div class="progress" style="width: 0%"></div>
+                            <span>Calculando confianza...</span>
+                        </div>
+                    </div>
+
+                    <div class="macro-monitor-card glass-card">
+                        <div class="indicator-label">MONITOR FLUJO DE DINERO</div>
+                        <div class="macro-items">
+                            <div class="macro-item">
+                                <span class="label">Dominancia BTC</span>
+                                <span id="val-btcd" class="val">---</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="label">Dominancia USDT</span>
+                                <span id="val-usdtd" class="val">---</span>
+                            </div>
+                            <div class="macro-item">
+                                <span class="label">S&P 500 (SPX)</span>
+                                <span id="val-spx" class="val">---</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sentiment-card glass-card">
+                        <div class="indicator-label">SENTIMIENTO DEL MERCADO</div>
+                        <div class="fear-greed-meter">
+                            <div id="fear-greed-val" class="fg-value">--</div>
+                            <div id="fear-greed-label" class="fg-label">CARGANDO...</div>
+                        </div>
+                    </div>
+
+                    <div class="trade-setup-card glass-card">
+                        <div class="indicator-label">⭐ OPORTUNIDAD ESTRELLA</div>
+                        <div id="trade-opportunity">Escaneando mercado...</div>
+                        <div id="trade-setup-details" class="setup-details" style="display:none;">
+                            <div class="setup-item"><strong>ENTRADA:</strong> <span id="entry-price">---</span></div>
+                            <div class="setup-item"><strong>TAKE PROFIT:</strong> <span id="tp-price" class="buy">---</span></div>
+                            <div class="setup-item"><strong>STOP LOSS:</strong> <span id="sl-price" class="sell">---</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="analysis-details">
+                        <div class="glass-card">
+                            <h4>Sentimiento Telegram</h4>
+                            <div id="sentiment-telegram" class="sentiment-meter">NEUTRAL</div>
+                        </div>
+                        <div class="glass-card">
+                            <h4>Sentimiento Noticias</h4>
+                            <div id="sentiment-news" class="sentiment-meter">NEUTRAL</div>
+                        </div>
+                        <div class="glass-card">
+                            <h4>Confluencia Técnica</h4>
+                            <div id="tech-confluence" class="sentiment-meter">NEUTRAL</div>
+                        </div>
+                    </div>
+            </section>
+            <!-- Pestaña 4: Liquidaciones -->
+            <section id="liquidations" class="tab-content">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Monitor de Liquidaciones</h1>
+                        <p>Datos en tiempo real (Purga de mercado)</p>
+                    </div>
+                </header>
+                <div class="glass-card full-height">
+                    <div id="liquidation-feed" class="feed-container">
+                        <div class="feed-placeholder">Escaneando purga de mercado...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pestaña 5: Radar de Ballenas -->
+            <section id="whales" class="tab-content">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Radar de Ballenas</h1>
+                        <p>Movimiento On-Chain de grandes capitales</p>
+                    </div>
+                </header>
+                <div class="glass-card full-height">
+                    <div id="whale-feed" class="feed-container">
+                        <div class="feed-placeholder">Rastreando grandes carteras...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pestaña 6: Tendencias -->
+            <section id="trends" class="tab-content">
+                <header class="section-header">
+                    <div class="title-group">
+                        <h1>Tendencias de la IA</h1>
+                        <p>Evolución de la confianza histórica</p>
+                    </div>
+                </header>
+                <div class="glass-card" style="height: 400px; padding: 20px;">
+                    <div id="trend-chart-container" style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <span class="text-muted">Generando gráfica de tendencia...</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
