@@ -64,14 +64,17 @@ async function runScraper() {
         }
         db.signals = allSignals;
 
-        // 3. AI Analysis (Si hay API Key)
+        // 3. AI Analysis (Guardar en DB para modo estático)
         if (genAI) {
             console.log('[3/4] Generando Análisis IA Deep Reasoning...');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const prompt = `Analiza estas señales y da recomendación JSON: ${allSignals.slice(-10).map(s => s.text).join('\n')}`;
+            const recentText = db.signals.slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
+            const prompt = `Analiza trading. Señales:\n${recentText}\nMacro: ${db.macro.btcd}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+            
             const result = await model.generateContent(prompt);
-            // Aquí podríamos guardar el análisis en el JSON para que el frontend lo lea estático
-            console.log('Análisis generado.');
+            const responseText = result.response.text().replace(/```json|```/g, '').trim();
+            db.ai_analysis = JSON.parse(responseText);
+            console.log('Análisis IA guardado en base de datos.');
         }
 
         // 4. Guardar y Salir

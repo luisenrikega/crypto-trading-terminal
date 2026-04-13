@@ -254,9 +254,21 @@ async function updateAIDecision() {
         document.getElementById('ai-reasoning').innerHTML = `<p>${data.reasoning}</p>`;
 
     } catch(e) {
-        console.error('Error fetching AI analysis:', e);
-        // Fallback or simple message
-        finalRecEl.innerText = 'CONECTANDO...';
+        console.warn('Backend no disponible. Intentando cargar datos estáticos...');
+        // Fallback: Intentar leer el análisis guardado en el JSON estático
+        try {
+            const res = await fetch('/trading_db.json');
+            const db = await res.json();
+            if (db.ai_analysis) {
+                const data = db.ai_analysis;
+                finalRecEl.innerText = data.recommendation;
+                finalRecEl.className = 'signal-value ' + (data.recommendation.includes('LONG') ? 'buy' : (data.recommendation.includes('SHORT') ? 'sell' : ''));
+                confProgress.style.width = `${data.confidence}%`;
+                document.getElementById('ai-reasoning').innerHTML = `<p>${data.reasoning} <br><small>(Datos en caché del último escaneo)</small></p>`;
+            }
+        } catch(err) {
+            finalRecEl.innerText = 'CONECTANDO...';
+        }
     }
 }
 
