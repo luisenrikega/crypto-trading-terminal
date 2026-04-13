@@ -297,46 +297,33 @@ export default defineConfig({
                     res.end(JSON.stringify(scoreHistory));
                 } else if (req.url === '/api/ai-analysis') {
                     res.setHeader('Content-Type', 'application/json');
-                    if (!genAI) {
-                        res.end(JSON.stringify({ recommendation: 'CONFIGURAR API KEY', reasoning: 'Falta GEMINI_API_KEY en .env', confidence: 0 }));
+                    if (!process.env.GEMINI_API_KEY) {
+                        res.end(JSON.stringify({ recommendation: 'LLAVE NO CARGADA', reasoning: 'Falta GEMINI_API_KEY', confidence: 0 }));
                         return;
                     }
                     
-                    const runAI = async () => {
-                        try {
-                            // Cambiamos a un selector de modelo más robusto
-                            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                            const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
-                            const prompt = `
-                                Analiza como experto trading:
-                                
-                                SEÑALES:
-                                ${recentSignals}
-                                
-                                MACRO (BTC Dom): ${cachedMacro.btcd}
-                                
-                                TAREA:
-                                1. RECOMENDACIÓN FINAL (STRONG LONG, LONG, NEUTRAL, SHORT, STRONG SHORT).
-                                2. RAZONAMIENTO breve (max 3 frases).
-                                3. CONFIANZA (0-99).
-                                
-                                Responde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }
-                            `;
-                            let result;
+                    const callGeminiRest = async () => {
+                        const API_KEY = process.env.GEMINI_API_KEY;
+                        const models = ["gemini-1.5-flash", "gemini-pro"];
+                        let lastErr = "";
+                        
+                        for (const m of models) {
                             try {
-                                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                                result = await model.generateContent(prompt);
-                            } catch(err) {
-                                const modelPro = genAI.getGenerativeModel({ model: "gemini-pro" });
-                                result = await modelPro.generateContent(prompt);
+                                const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${API_KEY}`;
+                                const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
+                                const promptText = `Analiza como experto trading: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+
+                                const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
+                                const text = response.data.candidates[0].content.parts[0].text;
+                                res.end(text.replace(/```json|```/g, '').trim());
+                                return;
+                            } catch (e) {
+                                lastErr = e.response?.data?.error?.message || e.message;
                             }
-                            const responseText = result.response.text().replace(/```json|```/g, '').trim();
-                            res.end(responseText);
-                        } catch (e) {
-                            res.end(JSON.stringify({ recommendation: 'ERROR IA', reasoning: e.message, confidence: 0 }));
                         }
+                        res.end(JSON.stringify({ recommendation: 'ERROR RED', reasoning: 'Bloqueo detectado: ' + lastErr, confidence: 0 }));
                     };
-                    runAI();
+                    callGeminiRest();
                 } else {
                     next();
                 }

@@ -65,23 +65,21 @@ async function runScraper() {
         db.signals = allSignals;
 
         // 3. AI Analysis (Guardar en DB para modo estático)
-        if (genAI) {
-            console.log('[3/4] Generando Análisis IA Deep Reasoning...');
-            let result;
-            const prompt = `Analiza trading. Señales:\n${db.signals.slice(-15).map(s => s.text).join('\n')}\nMacro: ${db.macro.btcd}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+        if (process.env.GEMINI_API_KEY) {
+            console.log('[3/4] Generando Análisis IA (REST Mode)...');
+            const models = ["gemini-1.5-flash", "gemini-pro"];
+            const promptText = `Analiza trading. Señales: ${db.signals.slice(-15).map(s => s.text).join('\n')}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
             
-            try {
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                result = await model.generateContent(prompt);
-            } catch (e) {
-                console.warn('Flash no disponible, usando Pro...');
-                const modelPro = genAI.getGenerativeModel({ model: "gemini-pro" });
-                result = await modelPro.generateContent(prompt);
+            for (const m of models) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+                    const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
+                    const text = response.data.candidates[0].content.parts[0].text;
+                    db.ai_analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
+                    console.log(`Análisis IA guardado exitosamente (${m})`);
+                    break;
+                } catch (e) { console.warn(`Error en ${m}: ${e.message}`); }
             }
-
-            const responseText = result.response.text().replace(/```json|```/g, '').trim();
-            db.ai_analysis = JSON.parse(responseText);
-            console.log('Análisis IA guardado exitosamente.');
         }
 
         // 4. Guardar y Salir
