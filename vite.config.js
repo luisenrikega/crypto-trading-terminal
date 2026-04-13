@@ -305,14 +305,14 @@ export default defineConfig({
                     
                     const callGeminiRest = async () => {
                         const API_KEY = process.env.GEMINI_API_KEY;
-                        const models = ["gemini-1.5-flash", "gemini-pro"];
+                        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
                         let lastErr = "";
                         
                         for (const m of models) {
                             try {
-                                const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${API_KEY}`;
+                                const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
                                 const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
-                                const promptText = `Analiza como experto trading: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+                                const promptText = `Analiza trading. Señales: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
 
                                 const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
                                 const text = response.data.candidates[0].content.parts[0].text;

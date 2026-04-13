@@ -171,12 +171,12 @@ app.get('/api/ai-analysis', async (req, res) => {
         return res.json({ recommendation: 'LLAVE NO CARGADA', reasoning: 'Falta GEMINI_API_KEY', confidence: 0 });
     }
 
-    const models = ["gemini-1.5-flash", "gemini-pro"];
+    const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
     let lastErr = "";
 
     for (const m of models) {
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
             const recentSignals = db.signals.slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
             const promptText = `Analiza trading. Señales: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
 

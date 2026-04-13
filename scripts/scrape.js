@@ -66,13 +66,13 @@ async function runScraper() {
 
         // 3. AI Analysis (Guardar en DB para modo estático)
         if (process.env.GEMINI_API_KEY) {
-            console.log('[3/4] Generando Análisis IA (REST Mode)...');
-            const models = ["gemini-1.5-flash", "gemini-pro"];
+            console.log('[3/4] Generando Análisis IA (REST v1 Mode)...');
+            const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
             const promptText = `Analiza trading. Señales: ${db.signals.slice(-15).map(s => s.text).join('\n')}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
             
             for (const m of models) {
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+                    const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${process.env.GEMINI_API_KEY}`;
                     const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
                     const text = response.data.candidates[0].content.parts[0].text;
                     db.ai_analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
