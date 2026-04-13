@@ -311,7 +311,7 @@ export default defineConfig({
                             try {
                                 const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
                                 const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
-                                const promptText = `Analiza trading. Señales: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+                                const promptText = `Eres analista institucional. Responde SIEMPRE en ESPAÑOL. Analiza: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
                                 const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
                                 const text = response.data.candidates[0].content.parts[0].text;
                                 res.end(text.replace(/```json|```/g, '').trim());

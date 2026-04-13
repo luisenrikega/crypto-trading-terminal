@@ -66,9 +66,9 @@ async function runScraper() {
 
         // 3. AI Analysis (Guardar en DB para modo estático)
         if (process.env.GEMINI_API_KEY) {
-            console.log('[3/4] Generando Análisis IA (Direct v2.5 Mode)...');
+            console.log('[3/4] Generando Análisis IA (v2.5 Español)...');
             const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"];
-            const promptText = `Analiza trading. Señales: ${db.signals.slice(-15).map(s => s.text).join('\n')}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+            const promptText = `Eres analista institucional cripto. Responde SIEMPRE en ESPAÑOL. Analiza: ${db.signals.slice(-15).map(s => s.text).join('\n')}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
             
             for (const m of models) {
                 try {
