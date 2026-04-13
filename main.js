@@ -278,40 +278,47 @@ function renderSignals() {
 
 // The "Brain" of the App - Now powered by Server-Side AI
 async function updateAIDecision() {
+    const decisionEl = document.getElementById('ai-final-decision');
+    const confBar = document.getElementById('ai-conf-bar');
+    const reasoningEl = document.getElementById('ai-big-reasoning');
+    
     try {
         const res = await fetch('/api/ai-analysis');
         const data = await res.json();
         
-        const fngVal = document.getElementById('fear-greed-val').innerText;
-        
-        // Update UI with AI Data
-        finalRecEl.innerText = data.recommendation;
-        finalRecEl.className = 'signal-value ' + (data.recommendation.includes('LONG') ? 'buy' : (data.recommendation.includes('SHORT') || data.recommendation.includes('CAUTION') ? 'sell' : ''));
-        
-        const displayConfidence = data.confidence;
-        confProgress.style.width = `${displayConfidence}%`;
-        confProgress.style.background = data.recommendation.includes('LONG') ? 'var(--success)' : (data.recommendation.includes('SHORT') ? 'var(--danger)' : 'var(--primary)');
-        confText.innerText = `CEREBRO IA (Sentiment: ${fngVal || '--'}): ${displayConfidence}%`;
+        // RECOMMENDATION
+        decisionEl.innerText = data.recommendation;
+        decisionEl.className = 'decision-text ' + (data.recommendation.toUpperCase().includes('LONG') ? 'buy' : (data.recommendation.toUpperCase().includes('SHORT') ? 'sell' : ''));
+        confBar.style.width = `${data.confidence}%`;
 
-        // Update Reasoning
-        document.getElementById('ai-reasoning').innerHTML = `<p>${data.reasoning}</p>`;
+        // LAYERS
+        if (data.layers) {
+            document.getElementById('ai-macro-val').innerText = data.layers.macro.status;
+            document.getElementById('ai-macro-fill').style.width = `${data.layers.macro.score}%`;
+            
+            document.getElementById('ai-social-val').innerText = data.layers.social.status;
+            document.getElementById('ai-social-fill').style.width = `${data.layers.social.score}%`;
+            
+            document.getElementById('ai-tech-val').innerText = data.layers.technical.status;
+            document.getElementById('ai-tech-fill').style.width = `${data.layers.technical.score}%`;
+        }
+
+        // PLAN
+        if (data.plan) {
+            document.getElementById('p-entry').innerText = data.plan.entry;
+            document.getElementById('p-tp').innerText = data.plan.tp;
+            document.getElementById('p-sl').innerText = data.plan.sl;
+        }
+
+        // PSYCHOLOGY
+        document.getElementById('p-psych').innerText = data.psychology || 'ESTABILIZACIÓN';
+
+        // REASONING
+        reasoningEl.innerHTML = data.reasoning;
 
     } catch(e) {
-        console.warn('Backend no disponible. Intentando cargar datos estáticos...');
-        // Fallback: Intentar leer el análisis guardado en el JSON estático
-        try {
-            const res = await fetch('/trading_db.json');
-            const db = await res.json();
-            if (db.ai_analysis) {
-                const data = db.ai_analysis;
-                finalRecEl.innerText = data.recommendation;
-                finalRecEl.className = 'signal-value ' + (data.recommendation.includes('LONG') ? 'buy' : (data.recommendation.includes('SHORT') ? 'sell' : ''));
-                confProgress.style.width = `${data.confidence}%`;
-                document.getElementById('ai-reasoning').innerHTML = `<p>${data.reasoning} <br><small>(Datos en caché del último escaneo)</small></p>`;
-            }
-        } catch(err) {
-            finalRecEl.innerText = 'CONECTANDO...';
-        }
+        console.warn('Backend data mismatch or error:', e);
+        decisionEl.innerText = 'CONECTANDO...';
     }
 }
 

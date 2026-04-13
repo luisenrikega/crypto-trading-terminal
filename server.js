@@ -171,14 +171,14 @@ app.get('/api/ai-analysis', async (req, res) => {
         return res.json({ recommendation: 'LLAVE NO CARGADA', reasoning: 'Falta GEMINI_API_KEY', confidence: 0 });
     }
 
-    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"];
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
     let lastErr = "";
 
     for (const m of models) {
         try {
             const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
             const recentSignals = db.signals.slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
-            const promptText = `Eres analista institucional. Responde SIEMPRE en ESPAÑOL. Analiza: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+            const promptText = `Eres analista institucional. Responde SIEMPRE en ESPAÑOL y JSON puro. Analiza: ${recentSignals}\nEstructura: { "recommendation": "...", "reasoning": "...", "confidence": 0, "layers": { "macro": { "status": "...", "score": 0 }, "social": { "status": "...", "score": 0 }, "technical": { "status": "...", "score": 0 } }, "plan": { "entry": "...", "tp": "...", "sl": "..." }, "psychology": "..." }`;
 
             const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
             const text = response.data.candidates[0].content.parts[0].text;

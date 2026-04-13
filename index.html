@@ -159,64 +159,53 @@
                     </div>
                 </header>
 
-                <div class="terminal-grid">
-                    <div class="ai-status-card glass-card">
-                        <div class="indicator-label">RECOMENDACIÓN FINAL</div>
-                        <div id="final-recommendation" class="signal-value neutral">ANALIZANDO...</div>
-                        <div class="confidence-bar">
-                            <div class="progress" style="width: 0%"></div>
-                            <span>Calculando confianza...</span>
+                <div class="ai-main-container">
+                    <div class="ai-recommendation-bar glass-card">
+                        <div class="indicator-label">DECISIÓN DEL CEREBRO 2.5</div>
+                        <div id="ai-final-decision" class="decision-text">ANALIZANDO MERCADO...</div>
+                        <div class="confidence-strip"><div id="ai-conf-bar" class="conf-fill"></div></div>
+                    </div>
+
+                    <div class="ai-triple-grid">
+                        <div class="confluence-card glass-card">
+                            <div class="card-head">CAPA MACRO</div>
+                            <div id="ai-macro-val" class="layer-status">---</div>
+                            <div class="mini-bar"><div id="ai-macro-fill" class="fill"></div></div>
                         </div>
-                        <div id="ai-reasoning" class="ai-reasoning-box">
-                            <p>Esperando análisis profundo del Cerebro Lógico...</p>
+                        <div class="confluence-card glass-card">
+                            <div class="card-head">CAPA SOCIAL</div>
+                            <div id="ai-social-val" class="layer-status">---</div>
+                            <div class="mini-bar"><div id="ai-social-fill" class="fill"></div></div>
+                        </div>
+                        <div class="confluence-card glass-card">
+                            <div class="card-head">CAPA TÉCNICA</div>
+                            <div id="ai-tech-val" class="layer-status">---</div>
+                            <div class="mini-bar"><div id="ai-tech-fill" class="fill"></div></div>
                         </div>
                     </div>
 
-                    <div class="macro-monitor-card glass-card">
-                        <div class="indicator-label">MONITOR FLUJO DE DINERO</div>
-                        <div class="macro-items">
-                            <div class="macro-item">
-                                <span class="label">Dominancia BTC</span>
-                                <span id="val-btcd" class="val">---</span>
+                    <div class="ai-dual-panel">
+                        <div class="trading-plan-card glass-card">
+                            <h3>PLAN DE OPERACIÓN SUGERIDO</h3>
+                            <div class="plan-grid">
+                                <div class="p-item"><span>Entry Target</span> <b id="p-entry">---</b></div>
+                                <div class="p-item"><span>Take Profit</span> <b id="p-tp" class="buy">---</b></div>
+                                <div class="p-item"><span>Stop Loss</span> <b id="p-sl" class="sell">---</b></div>
                             </div>
-                            <div class="macro-item">
-                                <span class="label">Dominancia USDT</span>
-                                <span id="val-usdtd" class="val">---</span>
-                            </div>
-                            <div class="macro-item">
-                                <span class="label">S&P 500 (SPX)</span>
-                                <span id="val-spx" class="val">---</span>
-                            </div>
+                        </div>
+                        <div class="psychology-card glass-card">
+                            <h3>PSICOLOGÍA DEL CICLO</h3>
+                            <div id="p-psych" class="psych-val">---</div>
+                            <p class="sub-text">Fase actual según señales</p>
                         </div>
                     </div>
 
-                    <div class="sentiment-card glass-card">
-                        <div class="indicator-label">SENTIMIENTO DEL MERCADO</div>
-                        <div class="fear-greed-meter">
-                            <div id="fear-greed-val" class="fg-value">--</div>
-                            <div id="fear-greed-label" class="fg-label">CARGANDO...</div>
-                        </div>
-                    </div>
-
-                    <div class="trade-setup-card glass-card">
-                        <div class="indicator-label">⭐ OPORTUNIDAD ESTRELLA</div>
-                        <div id="trade-opportunity">Escaneando mercado...</div>
-                        <div id="trade-setup-details" class="setup-details" style="display:none;">
-                            <div class="setup-item"><strong>ENTRADA:</strong> <span id="entry-price">---</span></div>
-                            <div class="setup-item"><strong>TAKE PROFIT:</strong> <span id="tp-price" class="buy">---</span></div>
-                            <div class="setup-item"><strong>STOP LOSS:</strong> <span id="sl-price" class="sell">---</span></div>
-                        </div>
+                    <div class="ai-reasoning-footer glass-card">
+                        <div class="indicator-label">RAZONAMIENTO LÓGICO</div>
+                        <div id="ai-big-reasoning" class="reasoning-content">Iniciando análisis profundo...</div>
                     </div>
                 </div>
-                <div class="analysis-details">
-                        <div class="glass-card">
-                            <h4>Sentimiento Telegram</h4>
-                            <div id="sentiment-telegram" class="sentiment-meter">NEUTRAL</div>
-                        </div>
-                        <div class="glass-card">
-                            <h4>Sentimiento Noticias</h4>
-                            <div id="sentiment-news" class="sentiment-meter">NEUTRAL</div>
-                        </div>
+            </section>
                         <div class="glass-card">
                             <h4>Confluencia Técnica</h4>
                             <div id="tech-confluence" class="sentiment-meter">NEUTRAL</div>
