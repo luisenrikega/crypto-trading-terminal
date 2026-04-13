@@ -498,3 +498,60 @@ h1, h2, h3, .nav-items .label, .logo, .signal-value {
 .long .sig-type-badge { color: var(--success); background: rgba(0, 255, 136, 0.1); }
 .short .sig-type-badge { color: var(--danger); background: rgba(255, 45, 85, 0.1); }
 
+/* Liquidations Layout */
+.liquidations-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.5rem;
+    height: calc(100vh - 200px);
+}
+
+.chart-half {
+    height: 100%;
+}
+
+.feed-half {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.full-height {
+    height: calc(100vh - 200px);
+}
+
+/* Animations for Charts */
+canvas {
+    animation: fadeIn 1s ease-out;
+}
+/* AI Reasoning Box */
+.ai-reasoning-box {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--glass-border);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    text-align: left;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ai-reasoning-box p {
+    position: relative;
+    padding-left: 20px;
+}
+
+.ai-reasoning-box p::before {
+    content: '"';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 2rem;
+    color: var(--primary);
+    opacity: 0.4;
+    line-height: 1;
+}

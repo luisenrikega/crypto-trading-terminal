@@ -143,6 +143,9 @@
                             <div class="progress" style="width: 0%"></div>
                             <span>Calculando confianza...</span>
                         </div>
+                        <div id="ai-reasoning" class="ai-reasoning-box">
+                            <p>Esperando análisis profundo del Cerebro Lógico...</p>
+                        </div>
                     </div>
 
                     <div class="macro-monitor-card glass-card">
@@ -201,12 +204,18 @@
                 <header class="section-header">
                     <div class="title-group">
                         <h1>Monitor de Liquidaciones</h1>
-                        <p>Datos en tiempo real (Purga de mercado)</p>
+                        <p>Flujo de capital purgado (Longs vs Shorts)</p>
                     </div>
                 </header>
-                <div class="glass-card full-height">
-                    <div id="liquidation-feed" class="feed-container">
-                        <div class="feed-placeholder">Escaneando purga de mercado...</div>
+                <div class="liquidations-layout">
+                    <div class="glass-card chart-half">
+                        <canvas id="liquidation-chart"></canvas>
+                    </div>
+                    <div class="glass-card feed-half">
+                        <h3>Últimos Eventos</h3>
+                        <div id="liquidation-feed" class="feed-container">
+                            <div class="feed-placeholder">Escaneando purga de mercado...</div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -231,18 +240,17 @@
                 <header class="section-header">
                     <div class="title-group">
                         <h1>Tendencias de la IA</h1>
-                        <p>Evolución de la confianza histórica</p>
+                        <p>Evolución de la confianza algorítmica y actividad</p>
                     </div>
                 </header>
-                <div class="glass-card" style="height: 400px; padding: 20px;">
-                    <div id="trend-chart-container" style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                        <span class="text-muted">Generando gráfica de tendencia...</span>
-                    </div>
+                <div class="glass-card" style="height: 500px; padding: 20px;">
+                    <canvas id="trend-chart"></canvas>
                 </div>
             </section>
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script type="module" src="main.js"></script>
 </body>

@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const DB_PATH = path.resolve('trading_db.json');
 let db = { signals: [], macro: {}, whales: [], liquids: [], history: [] };
@@ -15,6 +19,9 @@ let cachedWhales = db.whales || [];
 let cachedLiquids = db.liquids || [];
 let scoreHistory = db.history || [];
 let isScraping = false;
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 function saveDB() {
     fs.writeFileSync(DB_PATH, JSON.stringify({
@@ -286,6 +293,40 @@ export default defineConfig({
                 } else if (req.url === '/api/trends') {
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify(scoreHistory));
+                } else if (req.url === '/api/ai-analysis') {
+                    res.setHeader('Content-Type', 'application/json');
+                    if (!genAI) {
+                        res.end(JSON.stringify({ recommendation: 'CONFIGURAR API KEY', reasoning: 'Falta GEMINI_API_KEY en .env', confidence: 0 }));
+                        return;
+                    }
+                    
+                    const runAI = async () => {
+                        try {
+                            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                            const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
+                            const prompt = `
+                                Analiza como experto trading:
+                                
+                                SEÑALES:
+                                ${recentSignals}
+                                
+                                MACRO (BTC Dom): ${cachedMacro.btcd}
+                                
+                                TAREA:
+                                1. RECOMENDACIÓN FINAL (STRONG LONG, LONG, NEUTRAL, SHORT, STRONG SHORT).
+                                2. RAZONAMIENTO breve (max 3 frases).
+                                3. CONFIANZA (0-99).
+                                
+                                Responde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }
+                            `;
+                            const result = await model.generateContent(prompt);
+                            const responseText = result.response.text().replace(/```json|```/g, '').trim();
+                            res.end(responseText);
+                        } catch (e) {
+                            res.end(JSON.stringify({ recommendation: 'ERROR IA', reasoning: e.message, confidence: 0 }));
+                        }
+                    };
+                    runAI();
                 } else {
                     next();
                 }

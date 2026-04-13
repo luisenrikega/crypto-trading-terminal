@@ -22,6 +22,10 @@ let currentSignals = [];
 let currentMacro = { btcd: '---', usdtd: '---', spx: '---', lastUpdate: null };
 let lastUpdateTimestamp = null;
 
+// Chart Instances
+let trendChart = null;
+let liqChart = null;
+
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
@@ -229,75 +233,31 @@ function renderSignals() {
     `).join('');
 }
 
-// The "Brain" of the App
+// The "Brain" of the App - Now powered by Server-Side AI
 async function updateAIDecision() {
-    if (!currentSignals.length) return;
-
-    let longs = currentSignals.filter(s => s.type === 'LONG').length;
-    let shorts = currentSignals.filter(s => s.type === 'SHORT').length;
-    let newsScore = 0;
-    let sellTheNewsRisk = false;
-    let unlockRisk = false;
-    let macroPenalty = 0;
-
-    // Macro Influencers (Money Flow)
-    const btcdVal = parseFloat(currentMacro.btcd);
-    const usdtVal = parseFloat(currentMacro.usdtd);
-    
-    if (usdtVal > 6) macroPenalty -= 15; // High stablecoin hoarding = Fear
-    if (btcdVal > 55) macroPenalty -= 5; // Too much BTC dominance is bad for Alts
-    
-    // Fear & Greed Factor
-    const fngVal = parseInt(document.getElementById('fear-greed-val').innerText);
-    if (!isNaN(fngVal)) {
-        if (fngVal > 80) macroPenalty -= 5; // To much greed
-        if (fngVal < 25) macroPenalty += 10; // Extreme fear (opportunity)
-    }
-
-    // Check Token Unlocks
-    const currentTicker = currentSymbol.replace('USDT', '');
-    currentSignals.filter(s => s.type === 'TOKEN_UNLOCK').forEach(u => {
-        if (u.text.toUpperCase().includes(currentTicker)) {
-            unlockRisk = true;
-            newsScore -= 20;
-        }
-    });
-    
-    // News Analysis
-    currentSignals.forEach(s => {
-        const text = s.text.toUpperCase();
-        let weight = 0;
-        if (s.type === 'TRUMP_SIGNAL') weight = 15;
-        if (s.type === 'INSTITUTIONAL') weight = 12;
-        if (s.type === 'IMPORTANT_NEWS') weight = 8;
-        
-        if (text.includes('BITCOIN') || text.includes('BULLISH') || text.includes('BUY')) newsScore += weight;
-        if (text.includes('SEC') || text.includes('BEARISH') || text.includes('FUD')) newsScore -= weight;
-    });
-
     try {
-        const tickerRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${currentSymbol}`);
-        const ticker = await tickerRes.json();
-        const priceChange = parseFloat(ticker.priceChangePercent);
-        if (newsScore > 20 && priceChange > 10) sellTheNewsRisk = true;
-    } catch(e) {}
+        const res = await fetch('/api/ai-analysis');
+        const data = await res.json();
+        
+        const fngVal = document.getElementById('fear-greed-val').innerText;
+        
+        // Update UI with AI Data
+        finalRecEl.innerText = data.recommendation;
+        finalRecEl.className = 'signal-value ' + (data.recommendation.includes('LONG') ? 'buy' : (data.recommendation.includes('SHORT') || data.recommendation.includes('CAUTION') ? 'sell' : ''));
+        
+        const displayConfidence = data.confidence;
+        confProgress.style.width = `${displayConfidence}%`;
+        confProgress.style.background = data.recommendation.includes('LONG') ? 'var(--success)' : (data.recommendation.includes('SHORT') ? 'var(--danger)' : 'var(--primary)');
+        confText.innerText = `CEREBRO IA (Sentiment: ${fngVal || '--'}): ${displayConfidence}%`;
 
-    let confidence = 50 + (longs * 5) - (shorts * 5) + newsScore + macroPenalty;
-    let recommendation = 'NEUTRAL';
-    
-    if (confidence > 65) recommendation = confidence > 85 ? 'STRONG LONG' : 'LONG';
-    else if (confidence < 35) recommendation = confidence < 15 ? 'STRONG SHORT' : 'SHORT';
+        // Update Reasoning
+        document.getElementById('ai-reasoning').innerHTML = `<p>${data.reasoning}</p>`;
 
-    if (sellTheNewsRisk && recommendation.includes('LONG')) recommendation += ' (RISK: NEWS)';
-    if (unlockRisk) recommendation = 'CAUTION: UNLOCK';
-
-    let displayConfidence = Math.min(99, Math.abs(confidence));
-    finalRecEl.innerText = recommendation;
-    finalRecEl.className = 'signal-value ' + (recommendation.includes('LONG') ? 'buy' : (recommendation.includes('SHORT') || recommendation.includes('CAUTION') ? 'sell' : ''));
-    
-    confProgress.style.width = `${displayConfidence}%`;
-    confProgress.style.background = recommendation.includes('LONG') ? 'var(--success)' : 'var(--danger)';
-    confText.innerText = `IA (Sentiment: ${fngVal || '--'}, Macro: ${macroPenalty < 0 ? 'Negative' : 'Neutral'}): ${displayConfidence}%`;
+    } catch(e) {
+        console.error('Error fetching AI analysis:', e);
+        // Fallback or simple message
+        finalRecEl.innerText = 'CONECTANDO...';
+    }
 }
 
 async function refreshWhales() {
@@ -346,29 +306,120 @@ async function refreshLiquids() {
                 </div>
             `;
         }).join('');
+
+        // Charting Logic (Simulating volume from text for now if real numerical data isn't in DB)
+        let totalLongs = 0;
+        let totalShorts = 0;
+        liquids.forEach(l => {
+            const txt = l.text.toUpperCase();
+            // Try to extract $ amount
+            const match = l.text.match(/\$([\d.]+)[MBK]/i);
+            let val = match ? parseFloat(match[1]) : 1;
+            if (l.text.includes('B')) val *= 1000; // Billions
+            
+            if (txt.includes('LONG') || txt.includes('BUY')) totalLongs += val;
+            else if (txt.includes('SHORT') || txt.includes('SELL')) totalShorts += val;
+        });
+
+        initLiquidationChart(totalLongs, totalShorts);
+
     } catch(e) { console.error('Error Liquids:', e); }
+}
+
+function initLiquidationChart(longs, shorts) {
+    const ctx = document.getElementById('liquidation-chart');
+    if (!ctx) return;
+
+    if (liqChart) liqChart.destroy();
+
+    liqChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Longs Purged', 'Shorts Purged'],
+            datasets: [{
+                data: [longs || 1, shorts || 1],
+                backgroundColor: ['#ff2d55', '#00ff88'], // Longs liquidated (red) vs Shorts (green)
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Outfit' } } },
+                title: { display: true, text: 'VOLUMEN DE LIQUIDACIONES (EST.)', color: '#fff' }
+            },
+            cutout: '70%'
+        }
+    });
 }
 
 async function refreshTrends() {
     try {
         const res = await fetch('/api/trends');
         const history = await res.json();
-        const container = document.getElementById('trend-chart-container');
+        const ctx = document.getElementById('trend-chart');
         
-        if (!history || !history.length) {
-            container.innerHTML = '<div class="text-muted">Esperando datos para generar tendencia...</div>';
-            return;
-        }
-        
-        container.innerHTML = `
-            <div class="trend-bars" style="display: flex; align-items: flex-end; gap: 10px; height: 200px; width: 100%; padding: 20px;">
-                ${history.map(h => `
-                    <div class="trend-bar" style="height: ${Math.max(10, h.data * 2)}px; width: 25px; background: var(--primary); border-radius: 4px; position: relative;" title="Señales: ${h.data}">
-                        <span style="position: absolute; top: -20px; font-size: 10px; width: 100%; text-align: center;">${h.data}</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="text-muted" style="font-size: 0.8rem; margin-top: 10px;">Confianza Algorítmica (Últimos ${history.length} escaneos)</div>
-        `;
+        if (!ctx || !history || !history.length) return;
+
+        const labels = history.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        const data = history.map(h => h.data);
+        const dominance = history.map(h => parseFloat(h.btcd));
+
+        if (trendChart) trendChart.destroy();
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Actividad de Señales',
+                        data: data,
+                        borderColor: '#f7931a',
+                        backgroundColor: 'rgba(247, 147, 26, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#f7931a',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'BTC Dominance (%)',
+                        data: dominance,
+                        borderColor: '#00d2ff',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y1: {
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: { color: '#00d2ff' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#fff', font: { family: 'Outfit' } } }
+                }
+            }
+        });
     } catch(e) { console.error('Error Trends:', e); }
 }

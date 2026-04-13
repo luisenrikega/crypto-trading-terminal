@@ -4,7 +4,11 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +16,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5175;
 const DB_PATH = path.join(__dirname, 'trading_db.json');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 app.use(cors());
 app.use(express.json());
@@ -158,7 +165,50 @@ app.get('/api/whales', (req, res) => res.json(db.whales));
 app.get('/api/liquidations', (req, res) => res.json(db.liquids));
 app.get('/api/trends', (req, res) => res.json(db.history));
 
-app.get('*', (req, res) => {
+app.get('/api/ai-analysis', async (req, res) => {
+    if (!genAI) {
+        return res.json({ 
+            recommendation: 'CONFIGURAR API KEY', 
+            reasoning: 'La IA no está conectada. Por favor, añade GEMINI_API_KEY al archivo .env para habilitar el Cerebro Lógico.',
+            confidence: 0 
+        });
+    }
+
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const recentSignals = db.signals.slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
+        const prompt = `
+            Eres un experto analista de trading institucional de criptomonedas.
+            Analiza los siguientes datos actuales:
+            
+            SEÑALES RECIENTES DE TELEGRAM Y NOTICIAS:
+            ${recentSignals}
+            
+            DATOS MACRO:
+            BTC Dominance: ${db.macro.btcd}
+            S&P 500: ${db.macro.spx}
+            
+            TAREA:
+            1. Proporciona una RECOMENDACIÓN FINAL (una sola palabra o frase corta: STRONG LONG, LONG, NEUTRAL, SHORT, STRONG SHORT).
+            2. Da un RAZONAMIENTO DE CONFLUENCIA breve (máximo 3 frases) explicando por qué (considera sentimiento, macro e institucionales).
+            3. Estima un NIVEL DE CONFIANZA del 0 al 99.
+            
+            Responde ÚNICAMENTE en formato JSON plano:
+            { "recommendation": "...", "reasoning": "...", "confidence": 0 }
+        `;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        // Clean JSON in case model adds markers
+        const cleanJSON = responseText.replace(/```json|```/g, '').trim();
+        res.json(JSON.parse(cleanJSON));
+    } catch (e) {
+        console.error('[AI] Error:', e.message);
+        res.status(500).json({ recommendation: 'ERROR IA', reasoning: 'Error consultando al Cerebro Lógico.', confidence: 0 });
+    }
+});
+
+app.get('(.*)', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
