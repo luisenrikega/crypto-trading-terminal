@@ -175,7 +175,14 @@ app.get('/api/ai-analysis', async (req, res) => {
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        let model;
+        try {
+            model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // Verificación previa del modelo (opcional, pero ayuda a detectar el 404 antes)
+        } catch(e) {
+            model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        }
+        
         const recentSignals = db.signals.slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
         const prompt = `
             Eres un experto analista de trading institucional de criptomonedas.
@@ -197,7 +204,16 @@ app.get('/api/ai-analysis', async (req, res) => {
             { "recommendation": "...", "reasoning": "...", "confidence": 0 }
         `;
 
-        const result = await model.generateContent(prompt);
+        let result;
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            result = await model.generateContent(prompt);
+        } catch (e) {
+            console.warn('[AI] Flash not found, falling back to Pro...');
+            const modelPro = genAI.getGenerativeModel({ model: "gemini-pro" });
+            result = await modelPro.generateContent(prompt);
+        }
+
         const responseText = result.response.text();
         // Clean JSON in case model adds markers
         const cleanJSON = responseText.replace(/```json|```/g, '').trim();

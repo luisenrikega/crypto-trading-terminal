@@ -304,6 +304,7 @@ export default defineConfig({
                     
                     const runAI = async () => {
                         try {
+                            // Cambiamos a un selector de modelo más robusto
                             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                             const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
                             const prompt = `
@@ -321,7 +322,14 @@ export default defineConfig({
                                 
                                 Responde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }
                             `;
-                            const result = await model.generateContent(prompt);
+                            let result;
+                            try {
+                                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                                result = await model.generateContent(prompt);
+                            } catch(err) {
+                                const modelPro = genAI.getGenerativeModel({ model: "gemini-pro" });
+                                result = await modelPro.generateContent(prompt);
+                            }
                             const responseText = result.response.text().replace(/```json|```/g, '').trim();
                             res.end(responseText);
                         } catch (e) {
