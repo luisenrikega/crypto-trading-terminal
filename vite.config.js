@@ -305,7 +305,7 @@ export default defineConfig({
                     res.setHeader('Content-Type', 'application/json');
                     const callGeminiRest = async () => {
                         const API_KEY = process.env.GEMINI_API_KEY;
-                        const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+                        const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash"];
                         let lastErr = "";
                         for (const m of models) {
                             try {
