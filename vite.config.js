@@ -279,8 +279,52 @@ export default defineConfig({
     plugins: [{
         name: 'signals-api',
         configureServer(server) {
-            server.middlewares.use((req, res, next) => {
+            server.middlewares.use(async (req, res, next) => {
                 res.setHeader('Access-Control-Allow-Origin', '*');
+                
+                // Prioridad 1: Diagnóstico
+                if (req.url.startsWith('/api/debug-models')) {
+                    res.setHeader('Content-Type', 'application/json');
+                    const API_KEY = process.env.GEMINI_API_KEY;
+                    try {
+                        const r = await axios.get(`https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`);
+                        res.end(JSON.stringify(r.data));
+                    } catch (e) {
+                        try {
+                            const rb = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+                            res.end(JSON.stringify(rb.data));
+                        } catch(e2) {
+                            res.end(JSON.stringify({ error: e2.message, details: e2.response?.data }));
+                        }
+                    }
+                    return;
+                }
+
+                // Prioridad 2: IA
+                if (req.url.startsWith('/api/ai-analysis')) {
+                    res.setHeader('Content-Type', 'application/json');
+                    const callGeminiRest = async () => {
+                        const API_KEY = process.env.GEMINI_API_KEY;
+                        const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"];
+                        let lastErr = "";
+                        for (const m of models) {
+                            try {
+                                const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
+                                const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
+                                const promptText = `Analiza trading. Señales: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
+                                const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
+                                const text = response.data.candidates[0].content.parts[0].text;
+                                res.end(text.replace(/```json|```/g, '').trim());
+                                return;
+                            } catch (e) { lastErr = e.response?.data?.error?.message || e.message; }
+                        }
+                        res.end(JSON.stringify({ recommendation: 'ERROR RED', reasoning: 'Fallo: ' + lastErr }));
+                    };
+                    callGeminiRest();
+                    return;
+                }
+
+                // Prioridad 3: Datos
                 if (req.url === '/api/signals') {
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify(cachedSignals));
@@ -296,35 +340,6 @@ export default defineConfig({
                 } else if (req.url === '/api/trends') {
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify(scoreHistory));
-                } else if (req.url === '/api/ai-analysis') {
-                    res.setHeader('Content-Type', 'application/json');
-                    if (!process.env.GEMINI_API_KEY) {
-                        res.end(JSON.stringify({ recommendation: 'LLAVE NO CARGADA', reasoning: 'Falta GEMINI_API_KEY', confidence: 0 }));
-                        return;
-                    }
-                    
-                    const callGeminiRest = async () => {
-                        const API_KEY = process.env.GEMINI_API_KEY;
-                        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
-                        let lastErr = "";
-                        
-                        for (const m of models) {
-                            try {
-                                const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${API_KEY}`;
-                                const recentSignals = (cachedSignals.data || []).slice(-15).map(s => `[${s.source}] ${s.text}`).join('\n');
-                                const promptText = `Analiza trading. Señales: ${recentSignals}\nResponde SOLO JSON: { "recommendation": "...", "reasoning": "...", "confidence": 0 }`;
-
-                                const response = await axios.post(url, { contents: [{ parts: [{ text: promptText }] }] });
-                                const text = response.data.candidates[0].content.parts[0].text;
-                                res.end(text.replace(/```json|```/g, '').trim());
-                                return;
-                            } catch (e) {
-                                lastErr = e.response?.data?.error?.message || e.message;
-                            }
-                        }
-                        res.end(JSON.stringify({ recommendation: 'ERROR RED', reasoning: 'Bloqueo detectado: ' + lastErr, confidence: 0 }));
-                    };
-                    callGeminiRest();
                 } else {
                     next();
                 }
