@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
 
