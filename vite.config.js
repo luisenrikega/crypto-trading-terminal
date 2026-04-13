@@ -243,9 +243,11 @@ async function scrapeSignals() {
     }
 }
 
-// Scrape inicial y cada 30 min
-scrapeSignals();
-setInterval(scrapeSignals, 30 * 60 * 1000);
+// Scrape inicial y cada 30 min (SOLO en local, no en Vercel Build)
+if (!process.env.VERCEL && !process.env.CI) {
+    scrapeSignals();
+    setInterval(scrapeSignals, 30 * 60 * 1000);
+}
 
 async function sendTelegramAlert(message) {
     const BOT_TOKEN = '8604385124:AAGlvDKzevBbDlwJI4vQQTt61jKO8KHI_Go';
